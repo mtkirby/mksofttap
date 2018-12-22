@@ -1,5 +1,5 @@
 #!/bin/bash
-# 20181220 Kirby
+# 20181222 Kirby
 
 # Add to crontab with:
 # @reboot /root/tunreceiver.sh >/tmp/tunreceiver.cronjob 2>&1
@@ -7,7 +7,7 @@
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 
 defdev=$(ip route ls |egrep '^default via ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/')
-defip=$(ip route ls |egrep -v '^default via '|egrep " dev $defdev .* link src "  |sed -e 's/.* link src \([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\).*/\1/' |awk '{print $1}' |head -1)
+defip=$(ip addr ls $defdev |egrep 'inet .* scope\s+global'|head -1 |awk '{print $2}' |cut -d'/' -f1)
 
 if ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
 then
