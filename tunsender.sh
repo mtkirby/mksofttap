@@ -1,5 +1,6 @@
 #!/bin/bash
-# 20181220 Kirby
+# https://github.com/mtkirby/mksofttap
+# 20181222 Kirby
 
 # Add to crontab with:
 # @reboot /root/tunsender IPofIDSserver >/tmp/tunsender 2>&1
@@ -25,7 +26,7 @@ ip tunnel add softtap mode gre remote $1 ttl 255
 ip link set softtap up
 ip link set softtap mtu 9000
 ip route add 127.1.1.1 dev softtap
-for defip in $(ip route ls |egrep -v '^default via '|egrep " dev $defdev .* link src "  |sed -e 's/.* link src \([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\).*/\1/' |awk '{print $1}')
+for defip in $(ip addr ls $defdev |egrep 'inet .* scope\s+global' |awk '{print $2}' |cut -d'/' -f1)
 do
     if ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
     then
@@ -33,7 +34,7 @@ do
         continue
     fi
     
-    for portgroup in 1:21 23:872 874:2048 2050:65535
+    for portgroup in 1:21 23:513 515:872 874:2048 2050:65535
     do
         iptables -t mangle -A POSTROUTING -p tcp -m tcp -m multiport --sports $portgroup -s $defip -j TEE --gateway 127.1.1.1
         iptables -t mangle -A PREROUTING -p tcp -m tcp -m multiport --dports $portgroup -d $defip -j TEE --gateway 127.1.1.1

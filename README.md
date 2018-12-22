@@ -10,4 +10,4 @@ On the hypervisor machines, I have a bootup cronjob to send packets to SELKS, IP
 
 On the SELKS server, I have a bootup cronjob to recieve packets like so: @reboot /root/tunreceiver.sh >/tmp/tunreceiver.cronjob 2>&1
 
-You can filter out ports in the tunsender.sh by modifying the portgroups.  It would be wise to filter out rsync and nfs.
+You can filter out ports in the tunsender.sh by modifying the portgroups.  It would be wise to filter out rsync, syslog, and nfs.

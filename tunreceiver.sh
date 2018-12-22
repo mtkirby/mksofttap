@@ -1,4 +1,5 @@
 #!/bin/bash
+# https://github.com/mtkirby/mksofttap
 # 20181222 Kirby
 
 # Add to crontab with:
