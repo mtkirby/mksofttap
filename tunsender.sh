@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20181222 Kirby
+# 20181224 Kirby
 
 # Add to crontab with:
 # @reboot /root/tunsender IPofIDSserver >/tmp/tunsender 2>&1
@@ -26,6 +26,7 @@ ip tunnel add softtap mode gre remote $1 ttl 255
 ip link set softtap up
 ip link set softtap mtu 9000
 ip route add 127.1.1.1 dev softtap
+
 for defip in $(ip addr ls $defdev |egrep 'inet .* scope\s+global' |awk '{print $2}' |cut -d'/' -f1)
 do
     if ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
@@ -34,12 +35,19 @@ do
         continue
     fi
     
-    for portgroup in 1:21 23:513 515:872 874:2048 2050:65535
+    portgroup='22,514,873,2049,5666,5901,9997'
+
+    for proto in tcp udp
     do
-        iptables -t mangle -A POSTROUTING -p tcp -m tcp -m multiport --sports $portgroup -s $defip -j TEE --gateway 127.1.1.1
-        iptables -t mangle -A PREROUTING -p tcp -m tcp -m multiport --dports $portgroup -d $defip -j TEE --gateway 127.1.1.1
-        iptables -t mangle -A POSTROUTING -p udp -m udp -m multiport --sports $portgroup -s $defip -j TEE --gateway 127.1.1.1
-        iptables -t mangle -A PREROUTING -p udp -m udp -m multiport --dports $portgroup -d $defip -j TEE --gateway 127.1.1.1
+        iptables -t mangle -N tapin-${proto}-${defip} >/dev/null 2>&1
+        iptables -t mangle -N tapout-${proto}-${defip} >/dev/null 2>&1
+
+        iptables -t mangle -A PREROUTING -p $proto -m $proto -m multiport -d $defip ! --dports $portgroup -j tapin-${proto}-${defip} 
+        iptables -t mangle -A tapin-${proto}-${defip}  -p $proto -m $proto -m multiport -d $defip ! --sports $portgroup -j TEE --gateway 127.1.1.1
+
+        iptables -t mangle -A POSTROUTING -p $proto -m $proto -m multiport -s $defip ! --dports $portgroup -j tapout-${proto}-${defip}
+        iptables -t mangle -A tapout-${proto}-${defip} -p $proto -m $proto -m multiport -s $defip ! --sports $portgroup -j TEE --gateway 127.1.1.1
     done
 done
+
 
