@@ -1,11 +1,14 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20181224 Kirby
+# 20190108 Kirby
 
 # Add to crontab with:
 # @reboot /root/tunsender IPofIDSserver >/tmp/tunsender 2>&1
 
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+# Ports that will not be sent.
+ignoreports='22,514,873,2049,5666,5901,9997'
 
 if ip link ls softtap >/dev/null 2>&1
 then
@@ -34,19 +37,17 @@ do
         echo "skipping bad defip $defip"
         continue
     fi
-    
-    portgroup='22,514,873,2049,5666,5901,9997'
 
     for proto in tcp udp
     do
         iptables -t mangle -N tapin-${proto}-${defip} >/dev/null 2>&1
         iptables -t mangle -N tapout-${proto}-${defip} >/dev/null 2>&1
 
-        iptables -t mangle -A PREROUTING -p $proto -m $proto -m multiport -d $defip ! --dports $portgroup -j tapin-${proto}-${defip} 
-        iptables -t mangle -A tapin-${proto}-${defip}  -p $proto -m $proto -m multiport -d $defip ! --sports $portgroup -j TEE --gateway 127.1.1.1
+        iptables -t mangle -A PREROUTING -p $proto -m $proto -m multiport -d $defip ! --dports $ignoreports -j tapin-${proto}-${defip} 
+        iptables -t mangle -A tapin-${proto}-${defip}  -p $proto -m $proto -m multiport -d $defip ! --sports $ignoreports -j TEE --gateway 127.1.1.1
 
-        iptables -t mangle -A POSTROUTING -p $proto -m $proto -m multiport -s $defip ! --dports $portgroup -j tapout-${proto}-${defip}
-        iptables -t mangle -A tapout-${proto}-${defip} -p $proto -m $proto -m multiport -s $defip ! --sports $portgroup -j TEE --gateway 127.1.1.1
+        iptables -t mangle -A POSTROUTING -p $proto -m $proto -m multiport -s $defip ! --dports $ignoreports -j tapout-${proto}-${defip}
+        iptables -t mangle -A tapout-${proto}-${defip} -p $proto -m $proto -m multiport -s $defip ! --sports $ignoreports -j TEE --gateway 127.1.1.1
     done
 done
 
