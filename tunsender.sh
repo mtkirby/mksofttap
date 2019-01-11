@@ -5,7 +5,6 @@
 # Add to crontab with:
 # @reboot /root/tunsender.sh IPofIDSserver >/tmp/tunsender 2>&1
 
-
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 
 if ip link ls softtap >/dev/null 2>&1
@@ -27,7 +26,7 @@ ip link set softtap mtu 9000
 ip route add 127.1.1.1 dev softtap
 ip -6 route add fe80:1:1:1:1:1:1:1/128 dev softtap
 
-ignorePorts='22,514,873,2049,9997'
+ignorePorts='22,514,636,873,2049,9997'
 
 
 ################################################################################
@@ -60,6 +59,8 @@ done
 
 ################################################################################
 # METHOD 2: IP specific to this host
+#
+#defdev=$(ip route ls |egrep '^default via ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/')
 #for defip in $(ip addr ls $defdev |egrep 'inet .* scope\s+global' |awk '{print $2}' |cut -d'/' -f1)
 #do
 #    if ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
