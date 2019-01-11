@@ -1,7 +1,6 @@
 mksofttap is a couple scripts that creates a software tap on Linux.
 It uses a half-GRE tunnel with iptables to forward packets to an IDS server.
 The IDS server simply sets up a GRE endpoint with no network attachment.  
-I will add IPv6 in the future.
 
 My IDS is a SELKS server running Suricata.
 
