@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20181222 Kirby
+# 20190112 Kirby
 
 # Add to crontab with:
 # @reboot /root/tunreceiver.sh >/tmp/tunreceiver.cronjob 2>&1
@@ -16,7 +16,7 @@ then
     exit 1
 fi
 
-modprobe gre
+lsmod |egrep -q '^gre ' || modprobe gre
 ip tunnel add softtap mode gre local $defip ttl 255
 ip link set softtap up
 ip link set softtap mtu 9000
