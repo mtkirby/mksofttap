@@ -10,11 +10,13 @@ export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 defdev=$(ip route ls |egrep '^default via ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/')
 defip=$(ip addr ls $defdev |egrep 'inet .* scope\s+global'|head -1 |awk '{print $2}' |cut -d'/' -f1)
 
-if ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
-then
-    echo "FAILURE: unable to determine external IP"
-    exit 1
-fi
+while ! echo $defip |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
+do
+    echo "FAILURE: unable to determine external IP.  Sleeping"
+    sleep 60
+    defdev=$(ip route ls |egrep '^default via ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/')
+    defip=$(ip addr ls $defdev |egrep 'inet .* scope\s+global'|head -1 |awk '{print $2}' |cut -d'/' -f1)
+done
 
 lsmod |egrep -q '^gre ' || modprobe gre
 ip tunnel add softtap mode gre local $defip ttl 255

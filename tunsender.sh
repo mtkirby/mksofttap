@@ -2,6 +2,12 @@
 # https://github.com/mtkirby/mksofttap
 # 20190119 Kirby
 
+# If you want to tap a bridge, run "modprobe br_netfilter"
+# Then check to make sure nf-call for iptables is set to 1 (default).
+# net.bridge.bridge-nf-call-arptables = 1
+# net.bridge.bridge-nf-call-ip6tables = 1
+# net.bridge.bridge-nf-call-iptables = 1
+
 # Add to crontab with: # @reboot /root/tunsender.sh IPofIDSserver >/tmp/tunsender.log 2>&1
 
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin

@@ -10,3 +10,14 @@ On the SELKS server, I have a bootup cronjob to recieve packets like so: @reboot
 Setup Suricata to listen on the external interface.  Suricata will see the GRE traffic as it passes to the softtap interface.
 
 You can filter out ports in the tunsender.sh by modifying the ignoreports variable.  It would be wise to filter out rsync, syslog, and nfs.
+
+
+If you want to tap a bridge, run "modprobe br_netfilter"
+Then check to make sure nf-call for iptables is set to 1 (default).
+```sh
+net.bridge.bridge-nf-call-arptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+```
+
+
