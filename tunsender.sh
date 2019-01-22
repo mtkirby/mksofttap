@@ -49,6 +49,10 @@ ip link set softtap mtu 9000
 ip route add 127.1.1.1 dev softtap
 ip -6 route add fe80:1:1:1:1:1:1:1/128 dev softtap
 
+# ENABLE IF YOU WANT TO TAP EVERYTHING ON THE BRIDGE
+# WARNING: This forces all guest traffic to use the hypervisor iptables.
+# modprobe br_netfilter
+
 ignorePorts='22,88,123,161,389,443,514,636,873,1514,2049,5666,5901,8089,9997'
 
 ipset destroy mynets >/dev/null 2>&1
