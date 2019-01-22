@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20190119 Kirby
+# 20190121 Kirby
 
 # If you want to tap a bridge, run "modprobe br_netfilter"
 # Then check to make sure nf-call for iptables is set to 1 (default).
@@ -153,6 +153,8 @@ do
             -j TEE --gateway fe80:1:1:1:1:1:1:1
 
     done
+
+    echo "TAP set on interface $ifdev"
 done
 ################################################################################
 
