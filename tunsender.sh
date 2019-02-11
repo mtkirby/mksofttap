@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20190122 Kirby
+# 20190203 Kirby
 
 # If you want to tap a bridge, run "modprobe br_netfilter"
 # Then check to make sure nf-call for iptables is set to 1 (default).
@@ -11,12 +11,6 @@
 # Add to crontab with: # @reboot /root/tunsender.sh IPofIDSserver >/tmp/tunsender.log 2>&1
 
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
-
-if ip link ls softtap >/dev/null 2>&1
-then
-    echo "softtap tunnel already setup"
-    exit 1
-fi
 
 if ! echo $1 |egrep -q "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
 then
@@ -42,12 +36,15 @@ then
     fi
 fi
 
-modprobe gre >/dev/null 2>&1
-ip tunnel add softtap mode gre remote $1 ttl 255
-ip link set softtap up
-ip link set softtap mtu 9000
-ip route add 127.1.1.1 dev softtap
-ip -6 route add fe80:1:1:1:1:1:1:1/128 dev softtap
+if ! ip link ls softtap >/dev/null 2>&1
+then
+    modprobe gre >/dev/null 2>&1
+    ip tunnel add softtap mode gre remote $1 ttl 255
+    ip link set softtap up
+    ip link set softtap mtu 9000
+    ip route add 127.1.1.1 dev softtap
+    ip -6 route add fe80:1:1:1:1:1:1:1/128 dev softtap
+fi
 
 # ENABLE IF YOU WANT TO TAP EVERYTHING ON THE BRIDGE
 # WARNING: This forces all guest traffic to use the hypervisor iptables.
@@ -57,27 +54,48 @@ ip -6 route add fe80:1:1:1:1:1:1:1/128 dev softtap
 # Egress traffic will forward all ports.
 ignorePorts='22,88,123,161,389,443,514,636,873,1514,2049,5666,5901,8089,9997'
 
-ipset destroy mynets >/dev/null 2>&1
-ipset create mynets hash:net
-ipset add mynets 192.168.0.0/16
-ipset add mynets 172.16.0.0/12
-ipset add mynets 10.0.0.0/8
 
-ipset destroy myignorenets >/dev/null 2>&1
-ipset create myignorenets hash:net
-ipset add myignorenets 169.254.0.0/16
+if ! ipset list mynets >/dev/null 2>&1
+then
+    ipset create mynets hash:net
+    ipset add mynets 192.168.0.0/16
+    ipset add mynets 172.16.0.0/12
+    ipset add mynets 10.0.0.0/8
+fi
 
-ipset destroy my6nets >/dev/null 2>&1
-ipset create my6nets hash:net family ipv6
-ipset add my6nets fd00::/8
-ipset add my6nets fe80::/10
+if ! ipset list myignorenets >/dev/null 2>&1
+then
+    ipset create myignorenets hash:net
+    ipset add myignorenets 169.254.0.0/16
+fi
 
-ipset destroy myignore6nets >/dev/null 2>&1
-ipset create myignore6nets hash:net family ipv6
+if ! ipset list my6nets >/dev/null 2>&1
+then
+    ipset create my6nets hash:net family ipv6
+    ipset add my6nets fd00::/8
+    ipset add my6nets fe80::/10
+fi
+
+if ! ipset list myignore6nets >/dev/null 2>&1
+then
+    ipset create myignore6nets hash:net family ipv6
+fi
+
+# Sometimes cron starts before networking is finished.
+# Check for routes and sleep until found.
+while ! ip route ls |egrep -q ' via .* dev '
+do
+    sleep 10
+done
 
 ################################################################################
 for ifdev in $(ip route ls |egrep ' via .* dev ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/' |sort -u |grep -v softtap)
 do
+    if iptables -t mangle -L -n 2>&1 |egrep -q "tapin-.*-${ifdev}"
+    then
+        continue
+    fi
+
     for proto in tcp udp
     do
         #
