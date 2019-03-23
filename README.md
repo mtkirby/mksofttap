@@ -1,8 +1,7 @@
-mksofttap is a couple scripts that creates a software tap on Linux.
-
-It uses a half-GRE tunnel with iptables to forward packets to an IDS server.
+mksofttap is a virtual/software network TAP for Linux.  It uses a half-GRE tunnel and iptables mangle rules to copy packets to a network IDS.  There is no running agent.  The TAP runs in the kernel.
 
 The IDS server simply sets up a GRE endpoint with no network attachment.  
+The iptables mangle rules copies the matched packets through the GRE tunnel.
 
 My IDS is a SELKS server running Suricata.
 
