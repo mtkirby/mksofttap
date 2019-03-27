@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://github.com/mtkirby/mksofttap
-# 20190203 Kirby
+# 20190326 Kirby
 
 # If you want to tap a bridge, run "modprobe br_netfilter"
 # Then check to make sure nf-call for iptables is set to 1 (default).
@@ -39,7 +39,8 @@ fi
 if ! ip link ls softtap >/dev/null 2>&1
 then
     modprobe gre >/dev/null 2>&1
-    ip tunnel add softtap mode gre remote $1 ttl 255
+    #ip tunnel add softtap mode gre remote $1 ttl 255
+    ip tunnel add softtap mode gre remote $1 nopmtudisc
     ip link set softtap up
     ip link set softtap mtu 9000
     ip route add 127.1.1.1 dev softtap
@@ -89,7 +90,7 @@ do
 done
 
 ################################################################################
-for ifdev in $(ip route ls |egrep ' via .* dev ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/' |sort -u |grep -v softtap)
+for ifdev in $(ip route ls |egrep ' via .* dev ' |sed -e 's/.* dev \([A-Za-z0-9]*\) .*/\1/' |sort -u |grep -v softtap |egrep -v '^lo$')
 do
     if iptables -t mangle -L -n 2>&1 |egrep -q "tapin-.*-${ifdev}"
     then
